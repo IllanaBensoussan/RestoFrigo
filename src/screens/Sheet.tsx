@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
 import { Icon } from '../ds';
+import { useSheetBack } from '../lib/nav';
 
 export function Sheet({ title, onClose, closeLabel, children }: { title: string; onClose: () => void; closeLabel: string; children: ReactNode }) {
+  useSheetBack(onClose);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
