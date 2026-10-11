@@ -161,3 +161,4 @@ h1, h2, p { margin: 0; }
 .plan-day { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
 .plan-day-name { font-size: 15px; line-height: 22px; }
 .plan-day-name::first-letter { text-transform: uppercase; }
+.version { text-align: center; font-size: 13px; }

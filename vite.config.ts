@@ -5,4 +5,6 @@ export default defineConfig({
   // Absolute paths: shared links like /recette/{id} serve the same page from a deeper address.
   base: '/',
   plugins: [react()],
+  // Shown in the account sheet, to tell which version a phone is running.
+  define: { __VERSION__: JSON.stringify((process.env.GITHUB_SHA ?? 'dev').slice(0, 7)) },
 });
