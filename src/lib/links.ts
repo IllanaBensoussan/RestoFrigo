@@ -14,7 +14,7 @@ export const inviteUrl = (code: string) => `${location.origin}/foyer/${encodeURI
 
 /** The link has been handled: show the app's plain address again. */
 export function clearLink() {
-  if (location.pathname !== '/') history.replaceState(null, '', '/');
+  if (location.pathname !== '/') history.replaceState(history.state, '', '/');
 }
 
 /**

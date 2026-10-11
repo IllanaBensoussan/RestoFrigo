@@ -6,6 +6,7 @@ import { completeRedirect, signOut as fbSignOut, watchUser, type AppUser, type S
 import { makeCatalog, setCatalog, useCatalog } from './catalog';
 import { newInvite, subscribeCatalog } from './lib/cloud';
 import { clearLink, inviteUrl, parseLink, share, type Link } from './lib/links';
+import { useNav } from './lib/nav';
 import { entryName } from './lib/pantry';
 import { seedDemo, usePref, useUserData } from './lib/store';
 import { Home } from './screens/Home';
@@ -88,26 +89,31 @@ function Shell({ user, lang, setLang, t, toast, signOut, link, onLinkHandled, ch
     setCatalog(makeCatalog('unavailable'));
     return undefined;
   }, [user.demo]);
-  const [tab, setTab] = useState<Tab>('home');
-  const [recipe, setRecipe] = useState<string | undefined>();
+  // A shared recipe opens over the home screen, so back from it goes home.
+  const nav = useNav(link?.kind === 'recipe' ? { tab: 'recipes', recipe: link.id } : undefined);
+  const { tab, recipe } = nav.nav;
   const [manual, setManual] = useState(false);
   const [account, setAccount] = useState(false);
   const [invite, setInvite] = useState<string | null>(null);
   const main = useRef<HTMLElement>(null);
 
   const go = useCallback<AppCtx['go']>((next, opts) => {
-    setTab(next);
-    setRecipe(opts?.recipe);
+    nav.go(next, opts?.recipe);
     setManual(Boolean(opts?.manual));
+  }, [nav.go]);
+
+  // A form opened by hand belongs to the screen it was opened on.
+  useEffect(() => {
+    if (tab !== 'scan') setManual(false);
     main.current?.scrollTo({ top: 0 });
-  }, []);
+  }, [tab, recipe]);
 
   useEffect(() => {
     clearLink();
     if (!link) return;
     onLinkHandled();
-    if (link.kind === 'recipe') go('recipes', { recipe: link.id });
-    else if (user.demo) toast(t('inviteDemo'));
+    if (link.kind === 'recipe') return;
+    if (user.demo) toast(t('inviteDemo'));
     else setInvite(link.code);
     // Only the link the app was opened with.
   }, []);
@@ -160,7 +166,7 @@ function Shell({ user, lang, setLang, t, toast, signOut, link, onLinkHandled, ch
           {tab === 'home' && <Home />}
           {tab === 'pantry' && <Pantry />}
           {tab === 'scan' && <Scan manual={manual} onManualClose={() => setManual(false)} />}
-          {tab === 'recipes' && <Recipes openId={recipe} onOpen={(id) => { setRecipe(id); main.current?.scrollTo({ top: 0 }); }} />}
+          {tab === 'recipes' && <Recipes openId={recipe} onOpen={(id) => (id ? go('recipes', { recipe: id }) : nav.close())} />}
           {tab === 'menu' && <Menu />}
           {tab === 'list' && <Shopping />}
           </>}
