@@ -70,7 +70,7 @@ Tant que les clés ne sont pas renseignées, l'écran de connexion le signale et
 - **Catalogue** : les ingrédients, les recettes et leurs sources sont dans Firestore, dans les collections `ingredients`, `recipes` et `sources`. L'app ne contient aucune copie : tout vient de Firestore (le cache de l'appareil prend le relais hors ligne). Chaque recette a une catégorie (`course` : entrée, plat, accompagnement, dessert, petit-déjeuner), une annotation `kashrut` (viande/lait/neutre, בשרי/חלבי/פרווה) qui doit correspondre à ses ingrédients (champ `kashrut` des ingrédients), et une `source` (id dans `sources` et lien vers la page de la recette). Tout compte connecté peut les lire, et seul le script d'import peut les modifier. Leur source est dans le dépôt, dans `catalog/ingredients.json`, `catalog/recipes.json` et `catalog/sources.json` :
   - pour ajouter ou corriger une recette ou un ingrédient, modifie ces fichiers et pousse ;
   - le workflow `.github/workflows/catalog.yml` vérifie le catalogue (`src/catalog.test.ts`), puis l'envoie dans Firestore ;
-  - l'app lit Firestore et suit les changements en direct. Après une modification de `firestore.rules`, publie les règles (console Firebase, onglet **Règles**) **avant** de publier l'app qui en dépend.
+  - l'app lit Firestore et suit les changements en direct. Les modifications de `firestore.rules` sont publiées par le workflow de mise en ligne, avant l'app qui en dépend.
 
   Pour une recette, `image` peut être un chemin du site ou une URL. Sans photo (`null`), l'app affiche un cadre provisoire.
 
@@ -86,7 +86,7 @@ Le filtre kasher (`scripts/themealdb/kosher.mjs`) écarte le porc, les fruits de
 
 ## Mise en ligne
 
-Chaque push sur la branche principale construit l'app et la publie sur **https://resto-frigo.web.app** (`.github/workflows/deploy.yml`). Il faut une seule fois le secret GitHub `FIREBASE_SERVICE_ACCOUNT` : la clé JSON d'un compte de service Google Cloud qui a les rôles **Administrateur Firebase Hosting** (pour la mise en ligne) et **Utilisateur Cloud Datastore** (pour l'envoi du catalogue).
+Chaque push sur la branche principale construit l'app et la publie sur **https://resto-frigo.web.app** (`.github/workflows/deploy.yml`). Le même workflow publie d'abord les règles `firestore.rules`, puis l'app. Il faut une seule fois le secret GitHub `FIREBASE_SERVICE_ACCOUNT` : la clé JSON d'un compte de service Google Cloud qui a les rôles **Administrateur Firebase Hosting** (pour la mise en ligne), **Administrateur Firebase Rules** et **Consommateur Service Usage** (pour publier les règles) et **Utilisateur Cloud Datastore** (pour l'envoi du catalogue).
 
 ## Tester en local avec les émulateurs Firebase
 
