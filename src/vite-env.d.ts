@@ -6,3 +6,4 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID?: string;
   readonly VITE_FIREBASE_EMULATORS?: string;
 }
+declare const __VERSION__: string;
