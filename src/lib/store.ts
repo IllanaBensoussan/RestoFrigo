@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cloudAvailable, currentHouseholdId, legacyData, moveToOwnHousehold, saveDiff, subscribeHousehold, subscribeHouseholdId, type Household } from './cloud';
+import { cloudAvailable, currentHouseholdId, legacyData, MenuSaveError, moveToOwnHousehold, saveDiff, subscribeHousehold, subscribeHouseholdId, type Household } from './cloud';
 import type { AppUser } from './firebase';
 import type { MenuEntry } from './menu';
 import type { PantryEntry, ShoppingEntry } from './pantry';
@@ -32,6 +32,8 @@ export interface UserStore {
   status: SyncStatus;
   /** The shared household, for Google accounts once it has loaded. */
   household: Household | null;
+  /** The server refuses the menu (its rules aren't published yet): changes to it aren't kept. */
+  menuBlocked: boolean;
 }
 
 /**
@@ -64,7 +66,7 @@ function useLocalData(uid: string, active: boolean): UserStore {
       }),
     [uid],
   );
-  return { data, update, status: 'ready', household: null };
+  return { data, update, status: 'ready', household: null, menuBlocked: false };
 }
 
 function useCloudData(user: AppUser, active: boolean): UserStore {
@@ -73,6 +75,7 @@ function useCloudData(user: AppUser, active: boolean): UserStore {
   const [data, setData] = useState<UserData>(EMPTY);
   const [household, setHousehold] = useState<Household | null>(null);
   const [status, setStatus] = useState<SyncStatus>('loading');
+  const [menuBlocked, setMenuBlocked] = useState(false);
   const current = useRef<UserData>(EMPTY);
   const userRef = useRef(user);
   userRef.current = user;
@@ -114,6 +117,9 @@ function useCloudData(user: AppUser, active: boolean): UserStore {
   useEffect(() => {
     if (!householdId) return;
     setStatus('loading');
+    setMenuBlocked(false);
+    // Several listeners are refused at once when the user loses access: handle it once.
+    let leaving = false;
     // Offline on a device that never synced: stop waiting for the server and show the cache.
     const giveUp = window.setTimeout(() => setStatus((st) => (st === 'loading' ? 'ready' : st)), 4000);
     const unsub = subscribeHousehold(
@@ -132,6 +138,8 @@ function useCloudData(user: AppUser, active: boolean): UserStore {
         }
         // Either the user is moving to another household (its id arrives next), or a member
         // removed them: then they go back to their own household.
+        if (leaving) return;
+        leaving = true;
         void currentHouseholdId(uid).then((id) => {
           if (id !== householdId) return;
           if (id === uid) throw err;
@@ -141,6 +149,7 @@ function useCloudData(user: AppUser, active: boolean): UserStore {
           setStatus('error');
         });
       },
+      () => setMenuBlocked(true),
     );
     return () => {
       window.clearTimeout(giveUp);
@@ -156,13 +165,14 @@ function useCloudData(user: AppUser, active: boolean): UserStore {
       current.current = next;
       setData(next);
       saveDiff(householdId, prev, next).catch((err) => {
-        console.error(err);
-        setStatus('error');
+        console.error(err instanceof MenuSaveError ? err.reason : err);
+        if (err instanceof MenuSaveError) setMenuBlocked(true);
+        else setStatus('error');
       });
     },
     [householdId],
   );
-  return { data, update, status, household: household?.id === householdId ? household : null };
+  return { data, update, status, household: household?.id === householdId ? household : null, menuBlocked };
 }
 
 export function usePref<T extends string>(key: string, initial: T) {

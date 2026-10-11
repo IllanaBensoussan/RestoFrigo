@@ -75,7 +75,7 @@ export function subscribeHouseholdId(uid: string, onId: (id: string | null) => v
  * Streams a household's fridge, shopping list, menu and members. `fromCache` says the snapshot came
  * from the device cache, not yet confirmed by the server.
  */
-export function subscribeHousehold(id: string, onData: (d: UserData, h: Household, fromCache: boolean) => void, onError: (e: Error & { code?: string }) => void) {
+export function subscribeHousehold(id: string, onData: (d: UserData, h: Household, fromCache: boolean) => void, onError: (e: Error & { code?: string }) => void, onMenuRefused?: () => void) {
   const fs = getDb()!;
   let pantry: PantryEntry[] | null = null;
   let shopping: ShoppingEntry[] | null = null;
@@ -120,6 +120,7 @@ export function subscribeHousehold(id: string, onData: (d: UserData, h: Househol
       cached[4] = false;
       menu = [];
       emit();
+      onMenuRefused?.();
     }),
   ];
   return () => unsubs.forEach((u) => u());
@@ -127,16 +128,31 @@ export function subscribeHousehold(id: string, onData: (d: UserData, h: Househol
 
 const same = (a: object, b: object) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Writes only what changed between two states of a household, in one atomic batch. */
+/** Thrown by saveDiff when only the menu could not be saved. */
+export class MenuSaveError extends Error {
+  constructor(readonly reason: unknown) {
+    super('menu not saved');
+  }
+}
+
+/**
+ * Writes only what changed between two states of a household. The fridge, the shopping list and
+ * the last receipt date go in one atomic batch; the menu goes in a batch of its own, so a menu the
+ * server refuses (rules published before the menu existed) never holds back the rest.
+ */
 export async function saveDiff(householdId: string, prev: UserData, next: UserData) {
   const fs = getDb()!;
-  const batch = writeBatch(fs);
-  let writes = 0;
+  const main = writeBatch(fs);
+  const menu = writeBatch(fs);
+  let mainWrites = 0;
+  let menuWrites = 0;
   for (const [name, before, after] of [
     ['pantry', prev.pantry, next.pantry],
     ['shopping', prev.shopping, next.shopping],
     ['menu', prev.menu, next.menu],
   ] as const) {
+    const batch = name === 'menu' ? menu : main;
+    let writes = 0;
     const old = new Map<string, object>(before.map((x) => [x.id, x]));
     const now = new Set(after.map((x) => x.id));
     for (const item of after) {
@@ -153,12 +169,19 @@ export async function saveDiff(householdId: string, prev: UserData, next: UserDa
         writes++;
       }
     }
+    if (name === 'menu') menuWrites += writes;
+    else mainWrites += writes;
   }
   if (prev.lastReceiptAt !== next.lastReceiptAt) {
-    batch.set(doc(fs, 'households', householdId), { lastReceiptAt: next.lastReceiptAt }, { merge: true });
-    writes++;
+    main.set(doc(fs, 'households', householdId), { lastReceiptAt: next.lastReceiptAt }, { merge: true });
+    mainWrites++;
   }
-  if (writes > 0) await batch.commit();
+  const [a, b] = await Promise.allSettled([
+    mainWrites > 0 ? main.commit() : Promise.resolve(),
+    menuWrites > 0 ? menu.commit() : Promise.resolve(),
+  ]);
+  if (a.status === 'rejected') throw a.reason;
+  if (b.status === 'rejected') throw new MenuSaveError(b.reason);
 }
 
 /** Copies items into a household, in batches small enough for Firestore. */

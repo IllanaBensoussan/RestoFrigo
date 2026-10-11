@@ -80,7 +80,7 @@ export function App() {
 }
 
 function Shell({ user, lang, setLang, t, toast, signOut, link, onLinkHandled, children }: Pick<AppCtx, 'user' | 'lang' | 'setLang' | 't' | 'toast' | 'signOut'> & { link: Link | null; onLinkHandled: () => void; children: React.ReactNode }) {
-  const { data, update, status: sync, household } = useUserData(user);
+  const { data, update, status: sync, household, menuBlocked } = useUserData(user);
   // The catalogue only comes from Firestore, which the demo account can't read.
   const catalog = useCatalog();
   useEffect(() => {
@@ -153,6 +153,7 @@ function Shell({ user, lang, setLang, t, toast, signOut, link, onLinkHandled, ch
           {user.photoURL ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" /> : <span>{initials}</span>}
         </button>
         {sync === 'error' && <div className="syncbar" role="alert">{t('syncError')}</div>}
+        {menuBlocked && sync !== 'error' && (tab === 'menu' || tab === 'home') && <div className="syncbar" role="alert">{t('menuSyncError')}</div>}
         {catalog.status === 'unavailable' && <div className="syncbar" role="alert">{t('catalogUnavailable')}</div>}
         <main ref={main} className="main">
           {sync === 'loading' || catalog.status === 'loading' ? <div className="screen"><p className="muted" aria-busy="true">{t('loading')}</p></div> : <>
