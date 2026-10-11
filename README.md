@@ -88,6 +88,17 @@ Le filtre kasher (`scripts/themealdb/kosher.mjs`) écarte le porc, les fruits de
 
 Chaque push sur la branche principale construit l'app et la publie sur **https://resto-frigo.web.app** (`.github/workflows/deploy.yml`). Le même workflow publie d'abord les règles `firestore.rules`, puis l'app. Il faut une seule fois le secret GitHub `FIREBASE_SERVICE_ACCOUNT` : la clé JSON d'un compte de service Google Cloud qui a les rôles **Administrateur Firebase Hosting** (pour la mise en ligne), **Administrateur Firebase Rules** et **Consommateur Service Usage** (pour publier les règles) et **Utilisateur Cloud Datastore** (pour l'envoi du catalogue).
 
+## App Android
+
+Le dossier `android/` contient une app Android (Android 16 et plus) qui ouvre **https://resto-frigo.web.app** en plein écran dans une Trusted Web Activity. Chaque mise à jour du site arrive donc dans l'app sans nouvel APK. La connexion Google, l'appareil photo et l'import de tickets marchent comme sur le site.
+
+`.github/workflows/android.yml` construit l'APK quand `android/` change, ou à la demande depuis l'onglet **Actions**, et le publie dans la release GitHub **android**. Pour que l'APK sorte signé, ajoute une fois les secrets GitHub :
+
+- `ANDROID_KEYSTORE_BASE64` : la clé `restofrigo.jks` encodée en base64 (`base64 -w0 restofrigo.jks`) ;
+- `ANDROID_KEYSTORE_PASSWORD` : son mot de passe.
+
+Garde cette clé : toutes les mises à jour de l'app doivent être signées avec elle. Son empreinte SHA-256 est déclarée dans `public/.well-known/assetlinks.json`. C'est ce fichier qui permet à Android d'afficher le site sans barre d'adresse.
+
 ## Tester en local avec les émulateurs Firebase
 
 Sans toucher au vrai projet : il faut Java et `firebase-tools` (`npm i -g firebase-tools`).
