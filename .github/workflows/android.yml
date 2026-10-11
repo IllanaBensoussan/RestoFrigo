@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, claude/charming-carson-izbp7q, claude/funny-hopper-cqexzg]
+    branches: [main]
     paths: ['android/**', '.github/workflows/android.yml']
   workflow_dispatch:
 

@@ -2,7 +2,7 @@ name: Upload catalog to Firestore
 
 on:
   push:
-    branches: [main, claude/charming-carson-izbp7q]
+    branches: [main]
     paths: [catalog/**, scripts/seed-catalog.mjs]
   workflow_dispatch:
 
