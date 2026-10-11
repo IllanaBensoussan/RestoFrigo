@@ -53,3 +53,5 @@ jobs:
         run: |
           gh release view android >/dev/null 2>&1 || gh release create android --title "RestoFrigo Android" --notes "Dernier APK Android de RestoFrigo (Android 16 et plus)." --prerelease --target "$GITHUB_SHA"
           gh release upload android "$APK" --clobber
+          # Once the APK is signed, the unsigned one from before the secrets existed is only confusing.
+          if [ "$APK" = restofrigo.apk ]; then gh release delete-asset android restofrigo-unsigned.apk --yes || true; fi
