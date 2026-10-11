@@ -196,7 +196,6 @@ function Shell({ user, lang, setLang, t, toast, signOut, link, onLinkHandled, ch
             </div>
             <HouseholdPanel onMove={() => { moving.current = true; setAccount(false); }} />
             <button type="button" className="rf-btn rf-btn-secondary rf-btn-md rf-btn-block" onClick={signOut}>{t('signOut')}</button>
-            <p className="muted version">{t('version', { v: __VERSION__ })}</p>
           </Sheet>
         )}
         {invite && household && sync === 'ready' && (
