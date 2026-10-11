@@ -4,7 +4,7 @@ Par défaut, l'app utilise le projet `resto-frigo`, dont les clés (publiques pa
 
 ## Tester en local avec les émulateurs
 
-Sans toucher au vrai projet. Il faut Java et `firebase-tools` (`npm i -g firebase-tools`).
+Sans toucher au vrai projet. Il faut Java ; `firebase-tools` est récupéré automatiquement au premier lancement.
 
 ```bash
 npm run emulators       # Auth + Firestore en local, avec les règles de firestore.rules

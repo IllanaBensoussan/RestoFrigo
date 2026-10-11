@@ -4,11 +4,12 @@
 
 | Workflow | Quand | Ce qu'il fait |
 | --- | --- | --- |
+| `.github/workflows/ci.yml` | Chaque pull request vers `main` | Tests et build, pour repérer une erreur avant la fusion. |
 | `.github/workflows/deploy.yml` | Chaque push sur `main` | Tests, build, publication des règles `firestore.rules`, puis de l'app sur **https://resto-frigo.web.app**. |
 | `.github/workflows/catalog.yml` | Push sur `main` qui touche `catalog/` | Vérifie le catalogue et l'envoie dans Firestore. |
 | `.github/workflows/android.yml` | Push sur `main` qui touche `android/`, ou à la demande | Construit l'APK et le publie dans la release **android**. |
 
-Les trois peuvent aussi se lancer à la main depuis l'onglet **Actions**.
+Les trois derniers peuvent aussi se lancer à la main depuis l'onglet **Actions**.
 
 ## Secrets GitHub
 
