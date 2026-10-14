@@ -63,4 +63,8 @@ docs/             Documentation détaillée
 
 ## Travailler sur le projet
 
-La branche principale est `main`. Chaque push sur `main` publie l'app sur https://resto-frigo.web.app. Les changements passent par une branche de travail et une pull request vers `main` : les tests et le build tournent sur chaque pull request.
+La branche principale est `main`. Chaque push sur `main` publie l'app sur https://resto-frigo.web.app. Les changements passent par une branche de travail et une pull request vers `main` :
+
+- `main` est protégée : on ne peut pas y pousser directement ni la supprimer ;
+- les tests et le build (check **check**) tournent sur chaque pull request et doivent passer avant la fusion ;
+- la branche de travail est supprimée automatiquement une fois la pull request fusionnée.
