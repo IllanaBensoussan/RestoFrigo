@@ -128,3 +128,20 @@ export function matchRecipes(pantry: PantryEntry[], now = Date.now()): RecipeMat
 }
 
 export { ingredientName } from '../catalog';
+
+/** A recipe's searchable text: its title and its ingredients' names, in every language. */
+function recipeText(r: Recipe) {
+  const c = getCatalog();
+  const names = r.ingredients.flatMap((i) => c.ingredients.filter((ing) => ing.id === i.ref || ing.group === i.ref).flatMap((ing) => Object.values(ing.name)));
+  return normalize([...Object.values(r.title), ...names].join(' '));
+}
+
+/** The recipes whose title or ingredients hold every word typed ("poulet citron"), in any language. */
+export function searchRecipes<M extends { recipe: Recipe }>(matches: M[], q: string): M[] {
+  const words = normalize(q).trim().split(' ').filter(Boolean);
+  if (!words.length) return matches;
+  return matches.filter((m) => {
+    const text = recipeText(m.recipe);
+    return words.every((w) => text.includes(w));
+  });
+}

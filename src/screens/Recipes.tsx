@@ -4,7 +4,7 @@ import { COURSES, KASHRUT, recipeImage, sourceById, type Course, type Kashrut, t
 import { useApp } from '../ctx';
 import type { T } from '../i18n';
 import { recipeUrl, share } from '../lib/links';
-import { entryIngredientId, ingredientName, matchRecipes } from '../lib/pantry';
+import { entryIngredientId, ingredientName, matchRecipes, searchRecipes } from '../lib/pantry';
 import { PlanSheet, RecipesSwitch } from './Menu';
 
 const PAGE = 24;
@@ -18,6 +18,7 @@ export function Recipes({ openId, onOpen }: { openId?: string; onOpen: (id?: str
   const [course, setCourse] = useState<Course | null>(null);
   const [kashrut, setKashrut] = useState<Kashrut | null>(null);
   const [shown, setShown] = useState(PAGE);
+  const [q, setQ] = useState('');
   const [planning, setPlanning] = useState(false);
   const matches = matchRecipes(data.pantry);
 
@@ -77,13 +78,14 @@ export function Recipes({ openId, onOpen }: { openId?: string; onOpen: (id?: str
     );
   }
 
-  const list = matches.filter((x) => (!course || x.recipe.course === course) && (!kashrut || x.recipe.kashrut === kashrut));
+  const list = searchRecipes(matches, q).filter((x) => (!course || x.recipe.course === course) && (!kashrut || x.recipe.kashrut === kashrut));
   const pick = <V,>(set: (v: V) => void) => (v: V) => { set(v); setShown(PAGE); };
 
   return (
     <div className="screen">
       <h1 className="display">{t('recipesTitle')}</h1>
       <RecipesSwitch on="recipes" />
+      <input className="field" type="search" placeholder={t('searchRecipe')} aria-label={t('searchRecipe')} value={q} onChange={(e) => pick(setQ)(e.target.value)} />
       <div className="filters" role="group" aria-label={t('allCourses')}>
         <button type="button" aria-pressed={course === null} onClick={() => pick(setCourse)(null)}>{t('allCourses')}</button>
         {COURSES.map((c) => <button key={c} type="button" aria-pressed={course === c} onClick={() => pick(setCourse)(course === c ? null : c)}>{t(c)}</button>)}

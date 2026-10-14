@@ -4,8 +4,7 @@ import { recipeById, type Recipe } from '../catalog';
 import { useApp } from '../ctx';
 import { formatDay, type Lang, type T } from '../i18n';
 import { addDays, dayKey, MEALS, mealsBetween, menuNeeds, parseDay, setMeal, weekDays, weekStart, type Meal, type MenuEntry } from '../lib/menu';
-import { ingredientName, matchRecipes, uid } from '../lib/pantry';
-import { normalize } from '../lib/receipt';
+import { ingredientName, matchRecipes, searchRecipes, uid } from '../lib/pantry';
 import { Sheet } from './Sheet';
 
 /** Switches the Recipes tab between the recipe list and the weekly menu. */
@@ -135,13 +134,12 @@ export function Menu() {
 
 const SHOWN = 30;
 
-/** Picks a recipe for a meal: the ones the fridge covers best first, or a search by name. */
+/** Picks a recipe for a meal: the ones the fridge covers best first, or a search by name or ingredient. */
 function RecipePicker({ title, onPick, onClose }: { title: string; onPick: (r: Recipe) => void; onClose: () => void }) {
   const { t, lang, data } = useApp();
   const [q, setQ] = useState('');
   const matches = useMemo(() => matchRecipes(data.pantry), [data.pantry]);
-  const query = normalize(q).trim();
-  const list = (query ? matches.filter((m) => Object.values(m.recipe.title).some((s) => normalize(s).includes(query))) : matches).slice(0, SHOWN);
+  const list = searchRecipes(matches, q).slice(0, SHOWN);
   return (
     <Sheet title={title} onClose={onClose} closeLabel={t('close')}>
       <input className="field" type="search" placeholder={t('searchRecipe')} aria-label={t('searchRecipe')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
